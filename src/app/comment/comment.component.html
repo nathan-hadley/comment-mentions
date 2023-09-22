@@ -4,7 +4,7 @@
 
   <ul #mentionList class="mention-list" *ngIf="showMentionList">
     <li *ngFor="let user of filteredUsers; let i = index"
-        [class.selected]="i === selectedIndex"
+        [class.selected]="i === selectedUserIndex"
         (click)="selectUser(user.name)">
       {{ user.name }}
     </li>
@@ -27,7 +27,7 @@
     <textarea
       (keydown)="handleKeydown($event)"
       (keyup)="detectMention($event)"
-      [(ngModel)]="newComment">
+      [(ngModel)]="newCommentText">
     </textarea>
     <button (click)="addComment()">Add Comment</button>
   </div>
