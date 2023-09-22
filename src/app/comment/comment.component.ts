@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ViewChild, ElementRef, Component } from '@angular/core';
 
 interface User {
   userID: number;
@@ -22,9 +22,14 @@ export class CommentComponent {
     {'userID' : 1, 'name' : 'Kevin'},
     {'userID' : 2, 'name' : 'Jeff'},
     {'userID' : 3, 'name' : 'Bryan'},
-    {'userID' : 4, 'name' : 'Gabbey'}
+    {'userID' : 4, 'name' : 'Gabbey'},
+    {'userID' : 5, 'name' : 'Nathan'},
+    {'userID' : 6, 'name' : 'Kyle'},
   ];
 
+  @ViewChild('mentionList') mentionList: ElementRef | undefined;
+
+  selectedIndex: number = 0;
   newComment = '';         // Model for the comment input field
   showMentionList = false; // Flag to show/hide the mention list
   filteredUsers: User[] = [];     // Filtered user list based on the @mention
@@ -39,6 +44,7 @@ export class CommentComponent {
       this.showMentionList = true;
     } else {
       this.showMentionList = false;
+      this.selectedIndex = 0;
     }
   }
 
@@ -60,9 +66,57 @@ export class CommentComponent {
     }
   }
 
+  handleKeydown(event: KeyboardEvent) {
+    if (this.showMentionList && this.mentionList) {
+      const list = this.mentionList.nativeElement;
+      const items = list.getElementsByTagName('li');
+      if (!items.length) return;
+
+      // Enter key
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.selectUser(this.filteredUsers[this.selectedIndex].name);
+      }
+
+      // Arrow down
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (this.selectedIndex < this.filteredUsers.length - 1) {
+          this.selectedIndex++;
+        } else {
+          this.selectedIndex = 0;
+          list.scrollTop = 0; // Reset scroll to top when moving from the last item to the first
+        }
+
+        // If the next item is below the visible area
+        if (items[this.selectedIndex].offsetTop + items[this.selectedIndex].clientHeight > list.scrollTop + list.clientHeight) {
+          list.scrollTop = items[this.selectedIndex].offsetTop + items[this.selectedIndex].clientHeight - list.clientHeight;
+        }
+      }
+
+      // Arrow up
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (this.selectedIndex > 0) {
+          this.selectedIndex--;
+        } else {
+          this.selectedIndex = this.filteredUsers.length - 1;
+          list.scrollTop = list.scrollHeight; // Scroll to the bottom when moving from the first item to the last
+        }
+
+        // If the previous item is above the visible area
+        if (items[this.selectedIndex].offsetTop < list.scrollTop) {
+          list.scrollTop = items[this.selectedIndex].offsetTop;
+        }
+      }
+    }
+  }
+
   // Method to select a user from the mention list
   selectUser(userName: string) {
-    this.newComment = this.newComment.replace(/@\w+$/, `@${userName}`);
+    this.newComment = this.newComment.replace(/@(\w+)?$/, `@${userName}`);
     this.showMentionList = false;
+    this.selectedIndex = 0;
   }
+
 }
