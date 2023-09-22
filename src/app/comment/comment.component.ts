@@ -36,6 +36,8 @@ export class CommentComponent {
   showMentionList = false;
   filteredUsers: User[] = []; // Filtered user list based on the @mention
 
+  // TODO: line shows up when no users detected after @
+  // TODO: should just look at last word before cursor.
   // Method to detect @mention in the comment input
   detectMention(event: KeyboardEvent) {
     const input: string = (event.target as HTMLInputElement).value;
