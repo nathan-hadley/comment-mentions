@@ -1,0 +1,25 @@
+<div class="comment-section">
+
+  <div class="comment-container" *ngFor="let comment of comments">
+    <div class="comment">
+      <span class="speech-bubble-icon">
+        <i class="fa fa-comment"></i>
+      </span>
+      <span class="comment-text">{{ comment.text }}</span>
+      <span class="comment-data">
+        System - {{ comment.timestamp | date:'short' }}
+      </span>
+    </div>
+    <hr class="separator">
+  </div>
+
+  <div class="new-comment">
+    <textarea (keyup)="detectMention($event)" [(ngModel)]="newComment"></textarea>
+    <button (click)="addComment()">Add Comment</button>
+  </div>
+
+  <ul class="mention-list" *ngIf="showMentionList">
+    <li *ngFor="let user of filteredUsers" (click)="selectUser(user.name)">@{{ user.name }}</li>
+  </ul>
+
+</div>

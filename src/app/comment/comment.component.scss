@@ -1,0 +1,89 @@
+.comment-section {
+
+  .comment-container {
+    color: #444;
+    margin-bottom: 16px;
+
+    .comment {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+
+      .speech-bubble-icon {
+        margin-right: 8px;
+      }
+
+      .comment-text {
+        margin-right: 8px;
+        flex: 1;
+      }
+
+      .comment-data {
+        margin-right: 0;
+      }
+    }
+  }
+
+  .separator {
+    width: 100%;
+    border: none;
+    border-top: 1px solid gray;
+    margin-top: 8px;
+  }
+
+  .new-comment {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    textarea {
+      flex: 1;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid gray;
+      border-radius: 4px;
+      color: #444;
+      resize: vertical;  // Allow only vertical resizing
+
+      &::placeholder {
+        color: gray;
+      }
+
+      &:focus {
+        border-color: gray;  // Or another color for focus
+        outline: none;
+      }
+    }
+
+    button {
+      background-color: lightgray;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      margin-left: 8px;  // Space between textarea and button
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: darkgray;
+      }
+
+      &:active {
+        background-color: #444;
+      }
+    }
+  }
+
+
+  .mention-list {
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: scroll;
+    position: absolute;
+    background-color: white;
+    width: 200px;
+  }
+}
