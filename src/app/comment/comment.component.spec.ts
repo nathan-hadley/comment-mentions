@@ -13,7 +13,6 @@ describe('CommentComponent', () => {
     });
     fixture = TestBed.createComponent(CommentComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
   it('should create', () => {
@@ -28,26 +27,39 @@ describe('CommentComponent', () => {
   });
 
   it('should populate filteredUsers and show mention list when "@" is detected', () => {
-    const inputEvent = { target: { value: '@K' } };
+    const inputEvent = { target: { value: '@K', selectionStart: 2 } };
+    component.detectMention(inputEvent as any);
+    expect(component.filteredUsers.length).toBeGreaterThan(0);
+    expect(component.showMentionList).toBeTrue();
+  });
+
+  it('should populate filteredUsers and show mention list when "@" is detected after newline', () => {
+    const inputEvent = { target: { value: 'Hi!\n@K', selectionStart: 7 } };
     component.detectMention(inputEvent as any);
     expect(component.filteredUsers.length).toBeGreaterThan(0);
     expect(component.showMentionList).toBeTrue();
   });
 
   it('should hide mention list when no "@" is detected', () => {
-    const inputEvent = {
-      target: {
-        value: 'Hello'
-      }
-    };
+    const inputEvent = { target: { value: 'Hi', selectionStart: 2 } };
     component.detectMention(inputEvent as any);
     expect(component.showMentionList).toBeFalse();
   });
 
-  it('should update newCommentText when user is selected from mention list', () => {
-    component.newCommentText = 'Hello @Ke';
-    component.selectUser('Kevin');
-    expect(component.newCommentText).toEqual('Hello @Kevin');
+  it('should hide mention list when no "@" is detected on first character of textbox', () => {
+    let inputEvent = { target: { value: '@', selectionStart: 1 } };
+    component.detectMention(inputEvent as any);
+    expect(component.showMentionList).toBeTruthy();
+
+    inputEvent = { target: { value: '', selectionStart: 0 } };
+    component.detectMention(inputEvent as any);
+    expect(component.showMentionList).toBeFalse();
+  });
+
+  it('should hide mention list when no "@" is detected before cursor', () => {
+    const inputEvent = { target: { value: 'Hi @K', selectionStart: 2 } };
+    component.detectMention(inputEvent as any);
+    expect(component.showMentionList).toBeFalse();
   });
 
   it('should hide mention list after user is selected', () => {
@@ -55,6 +67,70 @@ describe('CommentComponent', () => {
     component.showMentionList = true;
     component.selectUser('Kevin');
     expect(component.showMentionList).toBeFalse();
+  });
+
+  describe('Arrow key navigation', () => {
+    beforeEach(() => {
+      component.filteredUsers = component.users; // Assuming all users are shown
+      component.showMentionList = true;
+      component.mentionList = fixture.debugElement.nativeElement.querySelector('#mentionList');
+    })
+
+    it('should select the next user on ArrowDown key', () => {
+      component.selectedUserIndex = 0; // Start from first user
+      fixture.detectChanges(); // Trigger change detection to ensure template processes the data
+      // @ts-ignore
+      component.handleKeydown({ key: 'ArrowDown', preventDefault: jasmine.createSpy('preventDefault') } as KeyboardEvent);
+      fixture.detectChanges(); // Trigger change detection to get updated state after event
+      expect(component.selectedUserIndex).toEqual(1);
+    });
+
+    it('should select the first user after the last user on ArrowDown key', () => {
+      component.selectedUserIndex = component.users.length - 1; // Start from the last user
+      fixture.detectChanges();
+      // @ts-ignore
+      component.handleKeydown({ key: 'ArrowDown', preventDefault: jasmine.createSpy('preventDefault') } as KeyboardEvent);
+      fixture.detectChanges();
+      expect(component.selectedUserIndex).toEqual(0);
+    });
+
+    it('should select the previous user on ArrowUp key', () => {
+      component.selectedUserIndex = 1; // Start from the second user
+      fixture.detectChanges();
+      // @ts-ignore
+      component.handleKeydown({ key: 'ArrowUp', preventDefault: jasmine.createSpy('preventDefault') } as KeyboardEvent);
+      fixture.detectChanges();
+      expect(component.selectedUserIndex).toEqual(0);
+    });
+
+    it('should select the last user before the first user on ArrowUp key', () => {
+      component.selectedUserIndex = 0; // Start from the first user
+      fixture.detectChanges();
+      // @ts-ignore
+      component.handleKeydown({ key: 'ArrowUp', preventDefault: jasmine.createSpy('preventDefault') } as KeyboardEvent);
+      fixture.detectChanges();
+      expect(component.selectedUserIndex).toEqual(component.users.length - 1);
+    });
+  })
+
+  it('should update filteredUsers when new character after "@" matches user names', () => {
+    const inputEvent = { target: { value: '@Ke', selectionStart: 3 } };
+    component.detectMention(inputEvent as any);
+    const kevinExists = component.filteredUsers.some(user => user.name === 'Kevin');
+    expect(kevinExists).toBeTrue();
+  });
+
+  it('should reset the selected index when filtered users list changes', () => {
+    component.selectedUserIndex = 3;
+    const inputEvent = { target: { value: '@Je', selectionStart: 3 } };
+    component.detectMention(inputEvent as any);
+    expect(component.selectedUserIndex).toEqual(0);
+  });
+
+  it('should update newCommentText when user is selected from mention list', () => {
+    component.newCommentText = 'Hello @Ke';
+    component.selectUser('Kevin');
+    expect(component.newCommentText).toEqual('Hello @Kevin ');
   });
 
   it('should alert mentioned users when comment with mentions is added', () => {
@@ -68,9 +144,8 @@ describe('CommentComponent', () => {
 
   it('should not alert non-mentioned users', () => {
     const alertSpy = spyOn(window, 'alert');
-    component.newCommentText = 'Hello @Kevin';
+    component.newCommentText = 'Hello @nonexistent-user';
     component.addComment();
-    expect(alertSpy.calls.count()).toEqual(1);
-    expect(alertSpy).toHaveBeenCalledWith('Mentioned: Kevin');
+    expect(alertSpy.calls.count()).toEqual(0);
   });
 });

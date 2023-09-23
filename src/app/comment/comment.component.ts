@@ -36,17 +36,37 @@ export class CommentComponent {
   showMentionList = false;
   filteredUsers: User[] = []; // Filtered user list based on the @mention
 
-  // TODO: line shows up when no users detected after @
-  // TODO: should just look at last word before cursor.
   // Method to detect @mention in the comment input
   detectMention(event: KeyboardEvent) {
-    const input: string = (event.target as HTMLInputElement).value;
-    const lastWord: string | undefined = input.split(" ").pop();
+    const inputElement = event.target as HTMLInputElement;
+    const cursorPosition = inputElement.selectionStart;
+
+    if (!cursorPosition) { // Early exit if we can't determine cursor position
+      this.showMentionList = false;
+      this.selectedUserIndex = 0;
+      return;
+    }
+
+    // Get last word BEFORE cursor but AFTER space or newline
+    const textBeforeCursor = inputElement.value.substring(0, cursorPosition);
+    const lastWord: string | undefined = textBeforeCursor.split(/[\s\n]+/).pop();
 
     if (lastWord?.startsWith('@')) {
+      const oldFilteredUsersLength = this.filteredUsers.length;
+
       // Do case-insensitive matching
       this.filteredUsers = this.users.filter(user => user.name.toLowerCase().startsWith(lastWord.substr(1).toLowerCase()));
-      this.showMentionList = true;
+
+      // Don't show mention list when all users filtered out
+      if (this.filteredUsers.length > 0) {
+        // Reset the selectedUserIndex to 0 if the filtered list size has changed
+        if (this.filteredUsers.length !== oldFilteredUsersLength) {
+          this.selectedUserIndex = 0;
+        }
+        this.showMentionList = true;
+      } else {
+        this.showMentionList = false;
+      }
     } else {
       this.showMentionList = false;
       this.selectedUserIndex = 0; // Reset index so that when popup reappears, selected user is at the top again
@@ -62,13 +82,13 @@ export class CommentComponent {
 
       // Enter key
       if (event.key === 'Enter') {
-        event.preventDefault(); // Not really needed because pressing enter does NOT submit comment form
+        event.preventDefault(); // Prevent moving to next line in text box
         this.selectUser(this.filteredUsers[this.selectedUserIndex].name);
       }
 
       // Arrow down
       if (event.key === 'ArrowDown') {
-        event.preventDefault(); // Prevent keying down in textbox
+        event.preventDefault(); // Prevent keying down in text box
         if (this.selectedUserIndex < this.filteredUsers.length - 1) {
           this.selectedUserIndex++;
         } else {
@@ -84,7 +104,7 @@ export class CommentComponent {
 
       // Arrow up
       if (event.key === 'ArrowUp') {
-        event.preventDefault(); // Prevent keying down in textbox
+        event.preventDefault(); // Prevent keying up in text box
         if (this.selectedUserIndex > 0) {
           this.selectedUserIndex--;
         } else {
@@ -103,7 +123,7 @@ export class CommentComponent {
   // Method to select a user from the mention list
   selectUser(userName: string) {
     // Replace partially finished '@' string with full username
-    this.newCommentText = this.newCommentText.replace(/@(\w+)?$/, `@${userName}`);
+    this.newCommentText = this.newCommentText.replace(/@(\w+)?$/, `@${userName} `);
     this.showMentionList = false;
     this.selectedUserIndex = 0;
   }
