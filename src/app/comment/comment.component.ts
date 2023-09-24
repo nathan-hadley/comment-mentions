@@ -165,6 +165,7 @@ export class CommentComponent {
       });
 
       this.newCommentText = '';
+      this.parsedText = '';
       this.showMentionList = false;
     }
   }
