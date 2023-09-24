@@ -1,4 +1,5 @@
-import { ViewChild, ElementRef, Component } from '@angular/core';
+import {ViewChild, ElementRef, Component, Renderer2} from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface User {
   userID: number;
@@ -33,15 +34,19 @@ export class CommentComponent {
   @ViewChild('mentionList') mentionList: ElementRef | undefined;
 
   selectedUserIndex: number = 0;
-  newCommentText = '';
-  parsedText = ''
-  showMentionList = false;
+  newCommentText: string = '';
+  parsedText: string = '';
+  showMentionList: boolean = false;
   filteredUsers: User[] = []; // Filtered user list based on the @mention
 
+  private canvas: HTMLCanvasElement = document.createElement("canvas");
+
+  constructor(private sanitizer: DomSanitizer, private renderer: Renderer2) {}
+
   // Method to detect @mention in the comment input
-  detectMention(event: KeyboardEvent) {
-    const inputElement = event.target as HTMLInputElement;
-    const cursorPosition = inputElement.selectionStart;
+  detectMention(event: KeyboardEvent): void {
+    const inputElement: HTMLInputElement = event.target as HTMLInputElement;
+    const cursorPosition: number | null = inputElement.selectionStart;
 
     if (!cursorPosition) { // Early exit if we can't determine cursor position
       this.showMentionList = false;
@@ -50,46 +55,22 @@ export class CommentComponent {
     }
 
     // Get last word BEFORE cursor but AFTER space or newline
-    const fullTextBeforeCursor = inputElement.value.substring(0, cursorPosition);
-    const lineBeforeCursor = fullTextBeforeCursor.split('\n').pop();
+    const fullTextBeforeCursor: string = inputElement.value.substring(0, cursorPosition);
+    const lineBeforeCursor: string | undefined = fullTextBeforeCursor.split('\n').pop();
     const lastWord: string | undefined = lineBeforeCursor?.split(/[\s\n]+/).pop();
 
     if (lastWord?.startsWith('@')) {
-      const oldFilteredUsersLength = this.filteredUsers.length;
-
-      // Do case-insensitive matching and sort
-      this.filteredUsers = this.users
-        .filter(user => user.name.toLowerCase().startsWith(lastWord.substr(1).toLowerCase()))
-        .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
-
-      // Don't show mention list when all users filtered out
-      if (this.filteredUsers.length > 0) {
-        // Reset the selectedUserIndex to 0 if the filtered list size has changed
-        if (this.filteredUsers.length !== oldFilteredUsersLength) {
-          this.selectedUserIndex = 0;
-        }
-
-        // Calculate position for user list
-        const horizontalPosition = this.getTextWidth(lineBeforeCursor, getComputedStyle(inputElement).font)
-
-        if (this.mentionList && this.mentionList.nativeElement) {
-          this.mentionList.nativeElement.style.left = `${horizontalPosition}px`;
-          this.mentionList.nativeElement.style.opacity = '1';
-          this.mentionList.nativeElement.style.visibility = 'visible';
-        }
-
-        this.showMentionList = true;
-      } else {
-        this.showMentionList = false;
+      if (!this.updateFilteredUsers(lastWord)) {
+        return;
       }
+      this.updateMentionListPosition(lineBeforeCursor, inputElement);
     } else {
-      this.showMentionList = false;
-      this.selectedUserIndex = 0; // Reset index so that when popup reappears, selected user is at the top again
+      this.hideMentionList();
     }
   }
 
   // Method to handle key events
-  handleKeydown(event: KeyboardEvent) {
+  handleKeydown(event: KeyboardEvent): void {
     if (this.showMentionList && this.mentionList) {
       const list = this.mentionList.nativeElement;
       const items = list.getElementsByTagName('li');
@@ -136,7 +117,7 @@ export class CommentComponent {
   }
 
   // Method to select a user from the mention list
-  selectUser(userName: string) {
+  selectUser(userName: string): void {
     // Replace partially finished '@' string with full username
     this.newCommentText = this.newCommentText.replace(/@(\w+)?$/, `@${userName} `);
     this.parsedText = this.newCommentText.replace(
@@ -148,7 +129,7 @@ export class CommentComponent {
   }
 
   // Method to add the comment to the comments array
-  addComment() {
+  addComment(): void {
     if (this.newCommentText) {
       this.comments.push({
         text: this.newCommentText,
@@ -157,7 +138,7 @@ export class CommentComponent {
       });
 
       // Grab all mentioned users
-      const mentionedUsers = this.users.filter(user => this.newCommentText.includes(`@${user.name}`));
+      const mentionedUsers: User[] = this.users.filter(user => this.newCommentText.includes(`@${user.name}`));
 
       // Alert each mentioned user
       mentionedUsers.forEach(user => {
@@ -170,10 +151,54 @@ export class CommentComponent {
     }
   }
 
-  // Method used to position mention popup in detectMention
+  // Method to clean parsedText
+  getSanitizedHtml(content: string | undefined): SafeHtml {
+    if (content) {
+      return this.sanitizer.bypassSecurityTrustHtml(content)
+    } else {
+      return '';
+    }
+  }
+
+  updateFilteredUsers(word: string): boolean {
+    const oldFilteredUsersLength: number = this.filteredUsers.length;
+
+    this.filteredUsers = this.users
+      .filter(user => user.name.toLowerCase().startsWith(word.substr(1).toLowerCase()))
+      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+
+    if (this.filteredUsers.length !== oldFilteredUsersLength) {
+      this.selectedUserIndex = 0;
+    }
+
+    if (!this.filteredUsers.length) {
+      this.hideMentionList();
+      return false;
+    }
+    return true;
+  }
+
+  // Helper for #detectMention
+  private updateMentionListPosition(line: string | undefined, input: HTMLInputElement): void {
+    const horizontalPosition: number = this.getTextWidth(line, getComputedStyle(input).font);
+
+    if (this.mentionList && this.mentionList.nativeElement) {
+      this.renderer.setStyle(this.mentionList.nativeElement, 'left', `${horizontalPosition}px`);
+      this.renderer.setStyle(this.mentionList.nativeElement, 'opacity', '1');
+      this.renderer.setStyle(this.mentionList.nativeElement, 'visibility', 'visible');
+    }
+
+    this.showMentionList = true;
+  }
+
+  private hideMentionList(): void {
+    this.showMentionList = false;
+    this.selectedUserIndex = 0;
+  }
+
+  // Helper for #updateMentionListPosition
   private getTextWidth(text: string | undefined, font: string): number {
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
+    const context: CanvasRenderingContext2D | null = this.canvas.getContext("2d");
     if (context && text) {
       context.font = font;
       return context.measureText(text).width;
