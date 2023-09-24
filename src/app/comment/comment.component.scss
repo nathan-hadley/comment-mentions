@@ -45,71 +45,73 @@
     margin-top: 8px;
   }
 
-  .new-comment {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+  .new-comment-wrapper {
+    position: relative;
 
-    textarea {
-      flex: 1;
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid gray;
-      border-radius: 4px;
-      color: #444;
-      resize: vertical;  // Allow only vertical resizing
+    .new-comment {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
 
-      &::placeholder {
-        color: gray;
+      textarea {
+        flex: 1;
+        padding: 8px;
+        font-size: 14px;
+        border: 1px solid gray;
+        border-radius: 4px;
+        color: #444;
+        resize: vertical;  // Allow only vertical resizing
+
+        &::placeholder {
+          color: gray;
+        }
+
+        &:focus {
+          border-color: gray;  // Or another color for focus
+          outline: none;
+        }
       }
 
-      &:focus {
-        border-color: gray;  // Or another color for focus
-        outline: none;
+      button {
+        background-color: lightgray;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 16px;
+        margin-left: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background-color: darkgray;
+        }
+
+        &:active {
+          background-color: #444;
+        }
       }
     }
 
-    button {
-      background-color: lightgray;
-      border: none;
-      border-radius: 4px;
-      padding: 8px 16px;
-      margin-left: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s;
 
-      &:hover {
+    .mention-list {
+      position: absolute;
+      bottom: 100%;
+      list-style-type: none;
+      padding: 0;
+      border: 1px solid #ccc;
+      max-height: 150px;
+      overflow-y: auto;
+      background-color: #eaeaea;
+      width: 200px;
+
+      li {
+        padding: 6px;
+      }
+
+      .selected {
         background-color: darkgray;
+        color: white;
       }
-
-      &:active {
-        background-color: #444;
-      }
-    }
-  }
-
-
-  .mention-list {
-    // position dropdown directly above textbox like Slack
-    position: absolute;
-    bottom: 100%;
-
-    list-style-type: none;
-    padding: 0;
-    border: 1px solid #ccc;
-    max-height: 150px;
-    overflow-y: auto;
-    background-color: #eaeaea;
-    width: 200px;
-
-    li {
-      padding: 6px;
-    }
-
-    .selected {
-      background-color: darkgray;
-      color: white;
     }
   }
 }

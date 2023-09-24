@@ -7,11 +7,9 @@ interface User {
 
 interface Comment {
   text: string;
+  parsedText?: string;
   timestamp: string;
 }
-
-// TODO: make @user bolded
-// TODO: keep popup right above new comment textbox
 
 @Component({
   selector: 'app-comment',
@@ -51,8 +49,10 @@ export class CommentComponent {
     }
 
     // Get last word BEFORE cursor but AFTER space or newline
-    const textBeforeCursor = inputElement.value.substring(0, cursorPosition);
-    const lastWord: string | undefined = textBeforeCursor.split(/[\s\n]+/).pop();
+    const fullTextBeforeCursor = inputElement.value.substring(0, cursorPosition);
+    const linesBeforeCursor = fullTextBeforeCursor.split('\n');
+    const textOnCurrentLine = linesBeforeCursor[linesBeforeCursor.length - 1];
+    const lastWord: string | undefined = textOnCurrentLine.split(/[\s\n]+/).pop();
 
     if (lastWord?.startsWith('@')) {
       const oldFilteredUsersLength = this.filteredUsers.length;
@@ -68,6 +68,13 @@ export class CommentComponent {
         if (this.filteredUsers.length !== oldFilteredUsersLength) {
           this.selectedUserIndex = 0;
         }
+
+        // Calculate position for user list
+        const horizontalPosition = this.getTextWidth(textOnCurrentLine, getComputedStyle(inputElement).font)
+        if (this.mentionList && this.mentionList.nativeElement) {
+          this.mentionList.nativeElement.style.left = `${horizontalPosition}px`;
+        }
+
         this.showMentionList = true;
       } else {
         this.showMentionList = false;
@@ -136,8 +143,14 @@ export class CommentComponent {
   // Method to add the comment to the comments array
   addComment() {
     if (this.newCommentText) {
+      const parsedText = this.newCommentText.replace(
+        /@(\w+)/g,
+        '<strong>@$1</strong>'
+      );
+
       this.comments.push({
         text: this.newCommentText,
+        parsedText,
         timestamp: new Date().toString()
       });
 
@@ -154,4 +167,17 @@ export class CommentComponent {
     }
   }
 
+  // Used to position mention popup
+  private getTextWidth(text: string, font: string): number {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.font = font;
+      return context.measureText(text).width;
+    }
+    return 0;
+  }
+
+
 }
+
