@@ -34,6 +34,7 @@ export class CommentComponent {
 
   selectedUserIndex: number = 0;
   newCommentText = '';
+  parsedText = ''
   showMentionList = false;
   filteredUsers: User[] = []; // Filtered user list based on the @mention
 
@@ -50,9 +51,8 @@ export class CommentComponent {
 
     // Get last word BEFORE cursor but AFTER space or newline
     const fullTextBeforeCursor = inputElement.value.substring(0, cursorPosition);
-    const linesBeforeCursor = fullTextBeforeCursor.split('\n');
-    const textOnCurrentLine = linesBeforeCursor[linesBeforeCursor.length - 1];
-    const lastWord: string | undefined = textOnCurrentLine.split(/[\s\n]+/).pop();
+    const lineBeforeCursor = fullTextBeforeCursor.split('\n').pop();
+    const lastWord: string | undefined = lineBeforeCursor?.split(/[\s\n]+/).pop();
 
     if (lastWord?.startsWith('@')) {
       const oldFilteredUsersLength = this.filteredUsers.length;
@@ -70,9 +70,12 @@ export class CommentComponent {
         }
 
         // Calculate position for user list
-        const horizontalPosition = this.getTextWidth(textOnCurrentLine, getComputedStyle(inputElement).font)
+        const horizontalPosition = this.getTextWidth(lineBeforeCursor, getComputedStyle(inputElement).font)
+
         if (this.mentionList && this.mentionList.nativeElement) {
           this.mentionList.nativeElement.style.left = `${horizontalPosition}px`;
+          this.mentionList.nativeElement.style.opacity = '1';
+          this.mentionList.nativeElement.style.visibility = 'visible';
         }
 
         this.showMentionList = true;
@@ -136,6 +139,10 @@ export class CommentComponent {
   selectUser(userName: string) {
     // Replace partially finished '@' string with full username
     this.newCommentText = this.newCommentText.replace(/@(\w+)?$/, `@${userName} `);
+    this.parsedText = this.newCommentText.replace(
+      `@${userName}`,
+      `<strong>@${userName}</strong>`
+    );
     this.showMentionList = false;
     this.selectedUserIndex = 0;
   }
@@ -143,14 +150,9 @@ export class CommentComponent {
   // Method to add the comment to the comments array
   addComment() {
     if (this.newCommentText) {
-      const parsedText = this.newCommentText.replace(
-        /@(\w+)/g,
-        '<strong>@$1</strong>'
-      );
-
       this.comments.push({
         text: this.newCommentText,
-        parsedText,
+        parsedText: this.parsedText ? this.parsedText : this.newCommentText,
         timestamp: new Date().toString()
       });
 
@@ -167,17 +169,15 @@ export class CommentComponent {
     }
   }
 
-  // Used to position mention popup
-  private getTextWidth(text: string, font: string): number {
+  // Method used to position mention popup in detectMention
+  private getTextWidth(text: string | undefined, font: string): number {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    if (context) {
+    if (context && text) {
       context.font = font;
       return context.measureText(text).width;
     }
     return 0;
   }
 
-
 }
-

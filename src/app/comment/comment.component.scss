@@ -104,6 +104,9 @@
       background-color: #eaeaea;
       width: 200px;
 
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+
       li {
         padding: 6px;
       }
