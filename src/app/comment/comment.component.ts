@@ -10,6 +10,9 @@ interface Comment {
   timestamp: string;
 }
 
+// TODO: make @user bolded
+// TODO: keep popup right above new comment textbox
+
 @Component({
   selector: 'app-comment',
   templateUrl: './comment.component.html',
@@ -54,8 +57,10 @@ export class CommentComponent {
     if (lastWord?.startsWith('@')) {
       const oldFilteredUsersLength = this.filteredUsers.length;
 
-      // Do case-insensitive matching
-      this.filteredUsers = this.users.filter(user => user.name.toLowerCase().startsWith(lastWord.substr(1).toLowerCase()));
+      // Do case-insensitive matching and sort
+      this.filteredUsers = this.users
+        .filter(user => user.name.toLowerCase().startsWith(lastWord.substr(1).toLowerCase()))
+        .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
       // Don't show mention list when all users filtered out
       if (this.filteredUsers.length > 0) {
