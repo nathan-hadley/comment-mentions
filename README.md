@@ -1,6 +1,22 @@
 # CommentMentions
 
+CommentMentions is an Angular component that facilitates user interactions by allowing them to mention other users in comments, similar to how you would on popular social media platforms. By typing "@" followed by a username, the system provides autocomplete suggestions. Users mentioned in submitted comments are then alerted.
+
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 16.2.3.
+
+## Getting Started
+
+### Prerequisites
+
+Ensure you have Node.js and the Angular CLI installed on your machine. If not, you can install them using the following commands:
+
+``````
+# Install Node.js
+Visit https://nodejs.org/ and download the installer.
+
+# Install Angular CLI globally
+npm install -g @angular/cli
+``````
 
 ## Development server
 
