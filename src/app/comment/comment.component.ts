@@ -1,10 +1,6 @@
-import {ViewChild, ElementRef, Component, Renderer2} from '@angular/core';
+import { ViewChild, ElementRef, Component, Renderer2, Input } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-
-interface User {
-  userID: number;
-  name: string;
-}
+import { User } from "../app.component";
 
 interface Comment {
   text: string;
@@ -18,26 +14,18 @@ interface Comment {
   styleUrls: ['./comment.component.scss']
 })
 export class CommentComponent {
-  comments: Comment[] = [];
+  @Input() users: User[] = [];
 
-  // Placeholder array of users
-  users: User[] = [
-    {'userID' : 1, 'name' : 'Kevin'},
-    {'userID' : 2, 'name' : 'Jeff'},
-    {'userID' : 3, 'name' : 'Bryan'},
-    {'userID' : 4, 'name' : 'Gabbey'},
-    {'userID' : 5, 'name' : 'Nathan'},
-    {'userID' : 6, 'name' : 'Kyle'},
-  ];
+  comments: Comment[] = [];
 
   // Template reference to the mention/user list popup
   @ViewChild('mentionList') mentionList: ElementRef | undefined;
 
   selectedUserIndex: number = 0;
   newCommentText: string = '';
-  parsedText: string = '';
   showMentionList: boolean = false;
   filteredUsers: User[] = []; // Filtered user list based on the @mention
+  selectedUsers: string[] = [];
 
   private canvas: HTMLCanvasElement = document.createElement("canvas");
 
@@ -120,10 +108,9 @@ export class CommentComponent {
   selectUser(userName: string): void {
     // Replace partially finished '@' string with full username
     this.newCommentText = this.newCommentText.replace(/@(\w+)?$/, `@${userName} `);
-    this.parsedText = this.newCommentText.replace(
-      `@${userName}`,
-      `<strong>@${userName}</strong>`
-    );
+    if (!this.selectedUsers.includes(userName)) {
+      this.selectedUsers.push(userName);
+    }
     this.showMentionList = false;
     this.selectedUserIndex = 0;
   }
@@ -131,22 +118,25 @@ export class CommentComponent {
   // Method to add the comment to the comments array
   addComment(): void {
     if (this.newCommentText) {
+      let parsedText: string = this.newCommentText;
+      this.selectedUsers.forEach(userName => {
+        const regex = new RegExp(`@${userName}`, 'g');
+        parsedText = parsedText.replace(regex, `<strong>@${userName}</strong>`);
+      });
+
       this.comments.push({
         text: this.newCommentText,
-        parsedText: this.parsedText ? this.parsedText : this.newCommentText,
+        parsedText,
         timestamp: new Date().toString()
       });
 
-      // Grab all mentioned users
-      const mentionedUsers: User[] = this.users.filter(user => this.newCommentText.includes(`@${user.name}`));
-
       // Alert each mentioned user
-      mentionedUsers.forEach(user => {
-        alert(`Mentioned: ${user.name}`); // Or send email/push notification
+      this.selectedUsers.forEach(userName => {
+        alert(`Mentioned: ${userName}`); // Or send email/push notification
       });
 
       this.newCommentText = '';
-      this.parsedText = '';
+      this.selectedUsers = []
       this.showMentionList = false;
     }
   }
