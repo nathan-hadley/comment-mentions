@@ -11,7 +11,6 @@ export interface User {
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'comment-mentions';
   users: User[] = [
     {'userID' : 1, 'name' : 'Kevin'},
     {'userID' : 2, 'name' : 'Jeff'},

@@ -17,7 +17,7 @@
   }
 
   .comment-container {
-    color: #444;
+    color: var(--dark-gray);
     margin-bottom: 16px;
 
     .comment {
@@ -64,7 +64,7 @@
         font-size: 14px;
         border: 1px solid gray;
         border-radius: 4px;
-        color: #444;
+        color: var(--dark-gray);
         resize: vertical;  // Allow only vertical resizing
 
         &::placeholder {
@@ -87,11 +87,11 @@
         transition: background-color 0.2s;
 
         &:hover {
-          background-color: darkgray;
+          background-color: gray;
         }
 
         &:active {
-          background-color: #444;
+          background-color: var(--dark-gray);
         }
       }
     }
@@ -102,10 +102,10 @@
       bottom: 100%;
       list-style-type: none;
       padding: 0;
-      border: 1px solid #ccc;
+      border: 1px solid lightgray;
       max-height: 150px;
       overflow-y: auto;
-      background-color: #eaeaea;
+      background-color: var(--very-lt-gray);
       width: 200px;
 
       visibility: hidden;
@@ -116,7 +116,7 @@
       }
 
       .selected {
-        background-color: darkgray;
+        background-color: gray;
         color: white;
       }
     }
