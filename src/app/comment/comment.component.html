@@ -29,6 +29,7 @@
 
     <div class="new-comment">
       <textarea
+        placeHolder="Type @ and tag user"
         (keydown)="handleKeydown($event)"
         (keyup)="detectMention($event)"
         [(ngModel)]="newCommentText">
