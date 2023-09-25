@@ -13,6 +13,15 @@ describe('CommentComponent', () => {
     });
     fixture = TestBed.createComponent(CommentComponent);
     component = fixture.componentInstance;
+    component.users = [
+      // Mocked users data here
+      {'userID' : 1, 'name' : 'Kevin'},
+      {'userID' : 2, 'name' : 'Jeff'},
+      {'userID' : 3, 'name' : 'Bryan'},
+      {'userID' : 4, 'name' : 'Gabbey'},
+      {'userID' : 5, 'name' : 'Nathan'},
+      {'userID' : 6, 'name' : 'Kyle'},
+    ];
   });
 
   it('should create', () => {
@@ -38,6 +47,8 @@ describe('CommentComponent', () => {
     it('should alert mentioned users when comment with mentions is added', () => {
       const alertSpy = spyOn(window, 'alert');
       component.newCommentText = 'Hello @Kevin and @Jeff';
+      component.selectUser('Kevin')
+      component.selectUser('Jeff')
       component.addComment();
       expect(alertSpy.calls.count()).toEqual(2);
       expect(alertSpy.calls.argsFor(0)).toEqual(['Mentioned: Kevin']);

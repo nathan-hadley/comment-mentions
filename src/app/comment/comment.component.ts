@@ -15,12 +15,9 @@ interface Comment {
 })
 export class CommentComponent {
   @Input() users: User[] = [];
-
-  comments: Comment[] = [];
-
-  // Template reference to the mention/user list popup
   @ViewChild('mentionList') mentionList: ElementRef | undefined;
 
+  comments: Comment[] = [];
   selectedUserIndex: number = 0;
   newCommentText: string = '';
   showMentionList: boolean = false;
@@ -31,7 +28,7 @@ export class CommentComponent {
 
   constructor(private sanitizer: DomSanitizer, private renderer: Renderer2) {}
 
-  // Method to detect @mention in the comment input
+  // Method to detect @user in the comment input
   detectMention(event: KeyboardEvent): void {
     const inputElement: HTMLInputElement = event.target as HTMLInputElement;
     const cursorPosition: number | null = inputElement.selectionStart;
@@ -57,51 +54,112 @@ export class CommentComponent {
     }
   }
 
+  // #detectMention helper
+  private updateFilteredUsers(word: string): boolean {
+    const oldFilteredUsersLength: number = this.filteredUsers.length;
+
+    this.filteredUsers = this.users
+      .filter(user => user.name.toLowerCase().startsWith(word.substr(1).toLowerCase()))
+      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+
+    if (this.filteredUsers.length !== oldFilteredUsersLength) {
+      this.selectedUserIndex = 0;
+    }
+
+    if (!this.filteredUsers.length) {
+      this.hideMentionList();
+      return false;
+    }
+    return true;
+  }
+
+  // #detectMention helper
+  private hideMentionList(): void {
+    this.showMentionList = false;
+    this.selectedUserIndex = 0;
+  }
+
+  // #detectMention helper
+  private updateMentionListPosition(line: string | undefined, input: HTMLInputElement): void {
+    const horizontalPosition: number = this.getTextWidth(line, getComputedStyle(input).font);
+
+    if (this.mentionList && this.mentionList.nativeElement) {
+      this.renderer.setStyle(this.mentionList.nativeElement, 'left', `${horizontalPosition}px`);
+      this.renderer.setStyle(this.mentionList.nativeElement, 'opacity', '1');
+      this.renderer.setStyle(this.mentionList.nativeElement, 'visibility', 'visible');
+    }
+
+    this.showMentionList = true;
+  }
+
+  // #updateMentionListPosition helper
+  private getTextWidth(text: string | undefined, font: string): number {
+    const context: CanvasRenderingContext2D | null = this.canvas.getContext("2d");
+    if (context && text) {
+      context.font = font;
+      return context.measureText(text).width;
+    }
+    return 0;
+  }
+
   // Method to handle key events
   handleKeydown(event: KeyboardEvent): void {
-    if (this.showMentionList && this.mentionList) {
-      const list = this.mentionList.nativeElement;
-      const items = list.getElementsByTagName('li');
-      if (!items.length) return;
+    if (!this.showMentionList || !this.mentionList) return;
 
-      // Enter key
-      if (event.key === 'Enter') {
-        event.preventDefault(); // Prevent moving to next line in text box
-        this.selectUser(this.filteredUsers[this.selectedUserIndex].name);
-      }
+    const list = this.mentionList.nativeElement;
+    const items = list.getElementsByTagName('li');
+    if (!items.length) return;
 
-      // Arrow down
-      if (event.key === 'ArrowDown') {
-        event.preventDefault(); // Prevent keying down in text box
-        if (this.selectedUserIndex < this.filteredUsers.length - 1) {
-          this.selectedUserIndex++;
-        } else {
-          this.selectedUserIndex = 0;
-          list.scrollTop = 0; // Reset scroll to top when moving from the last item to the first
-        }
-
-        // If the next item is below the visible area
-        if (items[this.selectedUserIndex].offsetTop + items[this.selectedUserIndex].clientHeight > list.scrollTop + list.clientHeight) {
-          list.scrollTop = items[this.selectedUserIndex].offsetTop + items[this.selectedUserIndex].clientHeight - list.clientHeight;
-        }
-      }
-
-      // Arrow up
-      if (event.key === 'ArrowUp') {
-        event.preventDefault(); // Prevent keying up in text box
-        if (this.selectedUserIndex > 0) {
-          this.selectedUserIndex--;
-        } else {
-          this.selectedUserIndex = this.filteredUsers.length - 1;
-          list.scrollTop = list.scrollHeight; // Scroll to the bottom when moving from the first item to the last
-        }
-
-        // If the previous item is above the visible area
-        if (items[this.selectedUserIndex].offsetTop < list.scrollTop) {
-          list.scrollTop = items[this.selectedUserIndex].offsetTop;
-        }
-      }
+    switch (event.key) {
+      case 'Enter':
+        this.handleEnter(event);
+        break;
+      case 'ArrowDown':
+        this.handleArrowDown(event, items, list);
+        break;
+      case 'ArrowUp':
+        this.handleArrowUp(event, items, list);
+        break;
     }
+  }
+
+  // #handleKeydown helper
+  private handleEnter(event: KeyboardEvent): void {
+    event.preventDefault(); // Prevent moving to next line in text box
+    this.selectUser(this.filteredUsers[this.selectedUserIndex].name);
+  }
+
+  // #handleKeydown helper
+  private handleArrowDown(event: KeyboardEvent, items: HTMLCollection, list: Element): void {
+    event.preventDefault();
+    this.selectedUserIndex = this.selectedUserIndex < this.filteredUsers.length - 1 ?
+      this.selectedUserIndex + 1 : 0;
+
+    // Scroll adjustment
+    list.scrollTop = this.selectedUserIndex === 0 ?
+      0 : this.adjustScroll(items[this.selectedUserIndex], list, true);
+  }
+
+  // #handleKeydown helper
+  private handleArrowUp(event: KeyboardEvent, items: HTMLCollection, list: Element): void {
+    event.preventDefault();
+    this.selectedUserIndex = this.selectedUserIndex > 0 ? this.selectedUserIndex - 1 : this.filteredUsers.length - 1;
+
+    // Scroll adjustment
+    list.scrollTop = this.selectedUserIndex === this.filteredUsers.length - 1 ?
+      list.scrollHeight : this.adjustScroll(items[this.selectedUserIndex], list, false);
+  }
+
+  // #handleKeydown helper
+  private adjustScroll(item: Element, list: Element, isArrowDown: boolean): number {
+    const castItem: HTMLElement = item as HTMLElement;
+    if (isArrowDown && (castItem.offsetTop + castItem.clientHeight > list.scrollTop + list.clientHeight)) {
+      return castItem.offsetTop + castItem.clientHeight - list.clientHeight;
+    }
+    if (!isArrowDown && castItem.offsetTop < list.scrollTop) {
+      return castItem.offsetTop;
+    }
+    return list.scrollTop;
   }
 
   // Method to select a user from the mention list
@@ -115,7 +173,7 @@ export class CommentComponent {
     this.selectedUserIndex = 0;
   }
 
-  // Method to add the comment to the comments array
+  // Method to submit the new comment
   addComment(): void {
     if (this.newCommentText) {
       let parsedText: string = this.newCommentText;
@@ -148,52 +206,6 @@ export class CommentComponent {
     } else {
       return '';
     }
-  }
-
-  updateFilteredUsers(word: string): boolean {
-    const oldFilteredUsersLength: number = this.filteredUsers.length;
-
-    this.filteredUsers = this.users
-      .filter(user => user.name.toLowerCase().startsWith(word.substr(1).toLowerCase()))
-      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
-
-    if (this.filteredUsers.length !== oldFilteredUsersLength) {
-      this.selectedUserIndex = 0;
-    }
-
-    if (!this.filteredUsers.length) {
-      this.hideMentionList();
-      return false;
-    }
-    return true;
-  }
-
-  // Helper for #detectMention
-  private updateMentionListPosition(line: string | undefined, input: HTMLInputElement): void {
-    const horizontalPosition: number = this.getTextWidth(line, getComputedStyle(input).font);
-
-    if (this.mentionList && this.mentionList.nativeElement) {
-      this.renderer.setStyle(this.mentionList.nativeElement, 'left', `${horizontalPosition}px`);
-      this.renderer.setStyle(this.mentionList.nativeElement, 'opacity', '1');
-      this.renderer.setStyle(this.mentionList.nativeElement, 'visibility', 'visible');
-    }
-
-    this.showMentionList = true;
-  }
-
-  private hideMentionList(): void {
-    this.showMentionList = false;
-    this.selectedUserIndex = 0;
-  }
-
-  // Helper for #updateMentionListPosition
-  private getTextWidth(text: string | undefined, font: string): number {
-    const context: CanvasRenderingContext2D | null = this.canvas.getContext("2d");
-    if (context && text) {
-      context.font = font;
-      return context.measureText(text).width;
-    }
-    return 0;
   }
 
 }
