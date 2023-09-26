@@ -173,8 +173,11 @@ export class CommentComponent {
   // Method to submit the new comment
   addComment(): void {
     if (this.newCommentText) {
+      // Convert newlines in textarea to <br> for display in HTML
+      const textWithBreaks = this.newCommentText.replace(/\n/g, '<br>');
       // Sanitize comment string so we can safely inject html with bolded mentions
-      let parsedText = this.sanitizer.sanitize(SecurityContext.HTML, this.newCommentText) || "";
+      let parsedText = this.sanitizer.sanitize(SecurityContext.HTML, textWithBreaks) || "";
+
       const mentions = this.collectMentions(this.newCommentText)
       mentions.forEach(userName => {
         const regex = new RegExp(`@${userName}`, 'g');
