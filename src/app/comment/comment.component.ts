@@ -226,8 +226,8 @@ export class CommentComponent {
   selectUser(userName: string): void {
     // Replace partially finished '@' string with full username
     this.newCommentText = this.newCommentText.replace(
-      /@(\w+)?$/,
-      `@${userName} `,
+      /@(?!\w)/,
+      `@${userName}`,
     );
     this.showMentionList = false;
     this.selectedUserIndex = 0;
@@ -254,10 +254,14 @@ export class CommentComponent {
         timestamp: new Date().toString(),
       });
 
-      // Alert each mentioned user
+      if (mentions.length > 0) {
+        alert(`Mentioned: ${mentions.join(', ')}`)
+      }
+
+      /*// Alert each mentioned user
       mentions.forEach((userName) => {
         alert(`Mentioned: ${userName}`); // Or send email/push notification
-      });
+      });*/
 
       this.newCommentText = '';
       this.showMentionList = false;
