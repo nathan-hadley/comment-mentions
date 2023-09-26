@@ -47,8 +47,6 @@ describe('CommentComponent', () => {
     it('should alert mentioned users when comment with mentions is added', () => {
       const alertSpy = spyOn(window, 'alert');
       component.newCommentText = 'Hello @Kevin and @Jeff';
-      component.selectUser('Kevin')
-      component.selectUser('Jeff')
       component.addComment();
       expect(alertSpy.calls.count()).toEqual(2);
       expect(alertSpy.calls.argsFor(0)).toEqual(['Mentioned: Kevin']);
@@ -65,17 +63,18 @@ describe('CommentComponent', () => {
 
   describe('#detectMentions', () => {
     beforeEach(() => {
-      // @ts-ignore
-      spyOn(window, 'getComputedStyle').and.callFake((elem: any) => {
+      const mockGetComputedStyle: typeof getComputedStyle = (elt: Element, pseudoElt?: string | null) => {
         return {
-          getPropertyValue: (prop) => {
+          getPropertyValue: (prop: string) => {
             if (prop === 'font') {
               return '16px Serif';  // Mocked font value
             }
             return '';  // Default for other properties
           }
-        };
-      });
+        } as CSSStyleDeclaration;
+      };
+
+      spyOn(window, 'getComputedStyle').and.callFake(mockGetComputedStyle);
     })
 
     it('should populate filteredUsers and show mention list when "@" is detected', () => {
@@ -139,8 +138,8 @@ describe('CommentComponent', () => {
     it('should select the next user on ArrowDown key', () => {
       component.selectedUserIndex = 0; // Start from first user
       fixture.detectChanges(); // Trigger change detection to ensure template processes the data
-      // @ts-ignore
-      component.handleKeydown({ key: 'ArrowDown', preventDefault: jasmine.createSpy('preventDefault') } as KeyboardEvent);
+      const arrowDown: unknown = { key: 'ArrowDown', preventDefault: jasmine.createSpy('preventDefault') }
+      component.handleKeydown(arrowDown as KeyboardEvent);
       fixture.detectChanges(); // Trigger change detection to get updated state after event
       expect(component.selectedUserIndex).toEqual(1);
     });
@@ -148,8 +147,8 @@ describe('CommentComponent', () => {
     it('should select the first user after the last user on ArrowDown key', () => {
       component.selectedUserIndex = component.users.length - 1; // Start from the last user
       fixture.detectChanges();
-      // @ts-ignore
-      component.handleKeydown({ key: 'ArrowDown', preventDefault: jasmine.createSpy('preventDefault') } as KeyboardEvent);
+      const arrowDown: unknown = { key: 'ArrowDown', preventDefault: jasmine.createSpy('preventDefault') }
+      component.handleKeydown(arrowDown as KeyboardEvent);
       fixture.detectChanges();
       expect(component.selectedUserIndex).toEqual(0);
     });
@@ -157,8 +156,8 @@ describe('CommentComponent', () => {
     it('should select the previous user on ArrowUp key', () => {
       component.selectedUserIndex = 1; // Start from the second user
       fixture.detectChanges();
-      // @ts-ignore
-      component.handleKeydown({ key: 'ArrowUp', preventDefault: jasmine.createSpy('preventDefault') } as KeyboardEvent);
+      const arrowUp: unknown = { key: 'ArrowUp', preventDefault: jasmine.createSpy('preventDefault') }
+      component.handleKeydown(arrowUp as KeyboardEvent);
       fixture.detectChanges();
       expect(component.selectedUserIndex).toEqual(0);
     });
@@ -166,8 +165,8 @@ describe('CommentComponent', () => {
     it('should select the last user before the first user on ArrowUp key', () => {
       component.selectedUserIndex = 0; // Start from the first user
       fixture.detectChanges();
-      // @ts-ignore
-      component.handleKeydown({ key: 'ArrowUp', preventDefault: jasmine.createSpy('preventDefault') } as KeyboardEvent);
+      const arrowUp: unknown = { key: 'ArrowUp', preventDefault: jasmine.createSpy('preventDefault') }
+      component.handleKeydown(arrowUp as KeyboardEvent);
       fixture.detectChanges();
       expect(component.selectedUserIndex).toEqual(component.users.length - 1);
     });

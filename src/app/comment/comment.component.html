@@ -10,7 +10,7 @@
       <span class="speech-bubble-icon">
         <i class="fa fa-comment"></i>
       </span>
-      <span class="comment-text" [innerHtml]="getSanitizedHtml(comment.parsedText)"></span>
+      <span class="comment-text" [innerHtml]="comment.parsedText"></span>
       <span class="comment-data">
         System - {{ comment.timestamp | date:'short' }}
       </span>

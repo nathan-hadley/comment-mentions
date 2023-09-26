@@ -1,4 +1,4 @@
-import { ViewChild, ElementRef, Component, Renderer2, Input } from '@angular/core';
+import {ViewChild, ElementRef, Component, Renderer2, Input, SecurityContext} from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { User } from "../app.component";
 
@@ -22,7 +22,6 @@ export class CommentComponent {
   newCommentText: string = '';
   showMentionList: boolean = false;
   filteredUsers: User[] = []; // Filtered user list based on the @mention
-  selectedUsers: string[] = [];
 
   private canvas: HTMLCanvasElement = document.createElement("canvas");
 
@@ -30,6 +29,7 @@ export class CommentComponent {
 
   // Method to detect @user in the comment input
   detectMention(event: KeyboardEvent): void {
+    if (!event.target) return;
     const inputElement: HTMLInputElement = event.target as HTMLInputElement;
     const cursorPosition: number | null = inputElement.selectionStart;
 
@@ -59,7 +59,7 @@ export class CommentComponent {
     const oldFilteredUsersLength: number = this.filteredUsers.length;
 
     this.filteredUsers = this.users
-      .filter(user => user.name.toLowerCase().startsWith(word.substr(1).toLowerCase()))
+      .filter(user => user.name.toLowerCase().startsWith(word.substring(1).toLowerCase()))
       .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
     if (this.filteredUsers.length !== oldFilteredUsersLength) {
@@ -166,9 +166,6 @@ export class CommentComponent {
   selectUser(userName: string): void {
     // Replace partially finished '@' string with full username
     this.newCommentText = this.newCommentText.replace(/@(\w+)?$/, `@${userName} `);
-    if (!this.selectedUsers.includes(userName)) {
-      this.selectedUsers.push(userName);
-    }
     this.showMentionList = false;
     this.selectedUserIndex = 0;
   }
@@ -176,8 +173,10 @@ export class CommentComponent {
   // Method to submit the new comment
   addComment(): void {
     if (this.newCommentText) {
-      let parsedText: string = this.newCommentText;
-      this.selectedUsers.forEach(userName => {
+      // Sanitize comment string so we can safely inject html with bolded mentions
+      let parsedText = this.sanitizer.sanitize(SecurityContext.HTML, this.newCommentText) || "";
+      const mentions = this.collectMentions(this.newCommentText)
+      mentions.forEach(userName => {
         const regex = new RegExp(`@${userName}`, 'g');
         parsedText = parsedText.replace(regex, `<strong>@${userName}</strong>`);
       });
@@ -189,23 +188,23 @@ export class CommentComponent {
       });
 
       // Alert each mentioned user
-      this.selectedUsers.forEach(userName => {
+      mentions.forEach(userName => {
         alert(`Mentioned: ${userName}`); // Or send email/push notification
       });
 
       this.newCommentText = '';
-      this.selectedUsers = []
       this.showMentionList = false;
     }
   }
 
-  // Method to clean parsedText
-  getSanitizedHtml(content: string | undefined): SafeHtml {
-    if (content) {
-      return this.sanitizer.bypassSecurityTrustHtml(content)
-    } else {
-      return '';
-    }
+  private collectMentions(inputString: string): string[] {
+    // Extract potential usernames from the input string
+    const potentialMentions = (inputString.match(/@\w+/g) || []).map(name => name.substring(1));
+    // Filter out names that don't exist in this.users
+    const mentions = potentialMentions.filter(name =>
+      this.users.some(user => user.name.toLowerCase() === name.toLowerCase())
+    );
+    return mentions;
   }
 
 }
