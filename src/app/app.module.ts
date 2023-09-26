@@ -8,17 +8,9 @@ import { CommentComponent } from './comment/comment.component';
 import { MatButtonModule } from '@angular/material/button';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    CommentComponent
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    FormsModule,
-    MatButtonModule
-  ],
+  declarations: [AppComponent, CommentComponent],
+  imports: [BrowserModule, AppRoutingModule, FormsModule, MatButtonModule],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

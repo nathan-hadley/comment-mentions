@@ -12,17 +12,19 @@
       </span>
       <span class="comment-text" [innerHtml]="comment.parsedText"></span>
       <span class="comment-data">
-        System - {{ comment.timestamp | date:'short' }}
+        System - {{ comment.timestamp | date: "short" }}
       </span>
     </div>
-    <hr class="separator">
+    <hr class="separator" />
   </div>
 
   <div class="new-comment-wrapper">
     <ul #mentionList class="mention-list" *ngIf="showMentionList">
-      <li *ngFor="let user of filteredUsers; let i = index"
-          [class.selected]="i === selectedUserIndex"
-          (click)="selectUser(user.name)">
+      <li
+        *ngFor="let user of filteredUsers; let i = index"
+        [class.selected]="i === selectedUserIndex"
+        (click)="selectUser(user.name)"
+      >
         {{ user.name }}
       </li>
     </ul>
@@ -32,10 +34,10 @@
         placeHolder="Type @ and tag user"
         (keydown)="handleKeydown($event)"
         (keyup)="detectMention($event)"
-        [(ngModel)]="newCommentText">
+        [(ngModel)]="newCommentText"
+      >
       </textarea>
       <button mat-raised-button (click)="addComment()">Add Comment</button>
     </div>
   </div>
-
 </div>
