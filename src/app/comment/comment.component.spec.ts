@@ -38,6 +38,8 @@ describe('CommentComponent', () => {
 
     it('should bold existing users mentioned in the comment text', () => {
       component.newCommentText = `Hello @K`;
+      component.cursorPosition = 9
+      component.lastWordBeforeCursor = '@K'
       component.selectUser('Kevin');
       component.addComment();
       const addedComment = component.comments[component.comments.length - 1];
@@ -48,9 +50,8 @@ describe('CommentComponent', () => {
       const alertSpy = spyOn(window, 'alert');
       component.newCommentText = 'Hello @Kevin and @Jeff';
       component.addComment();
-      expect(alertSpy.calls.count()).toEqual(2);
-      expect(alertSpy.calls.argsFor(0)).toEqual(['Mentioned: Kevin']);
-      expect(alertSpy.calls.argsFor(1)).toEqual(['Mentioned: Jeff']);
+      expect(alertSpy.calls.count()).toEqual(1);
+      expect(alertSpy.calls.argsFor(0)).toEqual(['Mentioned: Kevin, Jeff']);
     });
 
     it('should not alert non-mentioned users', () => {
@@ -193,8 +194,10 @@ describe('CommentComponent', () => {
   describe('#selectUser', () => {
     it('should update newCommentText when user is selected from mention list', () => {
       component.newCommentText = 'Hello @Ke';
+      component.cursorPosition = 9
+      component.lastWordBeforeCursor = '@Ke'
       component.selectUser('Kevin');
-      expect(component.newCommentText).toEqual('Hello @Kevin ');
+      expect(component.newCommentText).toEqual('Hello @Kevin');
     });
 
     it('should hide mention list after user is selected', () => {

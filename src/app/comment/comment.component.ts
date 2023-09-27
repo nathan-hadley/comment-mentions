@@ -1,13 +1,6 @@
-import {
-  ViewChild,
-  ElementRef,
-  Component,
-  Renderer2,
-  Input,
-  SecurityContext,
-} from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { User } from '../app.component';
+import {Component, ElementRef, Input, Renderer2, SecurityContext, ViewChild,} from '@angular/core';
+import {DomSanitizer} from '@angular/platform-browser';
+import {User} from '../app.component';
 
 interface Comment {
   text: string;
@@ -27,6 +20,8 @@ export class CommentComponent {
   comments: Comment[] = [];
   selectedUserIndex: number = 0;
   newCommentText: string = '';
+  cursorPosition: number | null = null;
+  lastWordBeforeCursor: string = '';
   showMentionList: boolean = false;
   filteredUsers: User[] = []; // Filtered user list based on the @mention
 
@@ -41,9 +36,9 @@ export class CommentComponent {
   detectMention(event: KeyboardEvent): void {
     if (!event.target) return;
     const inputElement: HTMLInputElement = event.target as HTMLInputElement;
-    const cursorPosition: number | null = inputElement.selectionStart;
+    this.cursorPosition = inputElement.selectionStart;
 
-    if (!cursorPosition) {
+    if (!this.cursorPosition) {
       // Early exit if we can't determine cursor position
       this.showMentionList = false;
       this.selectedUserIndex = 0;
@@ -53,17 +48,18 @@ export class CommentComponent {
     // Get last word BEFORE cursor but AFTER space or newline
     const fullTextBeforeCursor: string = inputElement.value.substring(
       0,
-      cursorPosition,
+      this.cursorPosition,
     );
     const lineBeforeCursor: string | undefined = fullTextBeforeCursor
       .split('\n')
       .pop();
-    const lastWord: string | undefined = lineBeforeCursor
+    const lastWord = lineBeforeCursor
       ?.split(/[\s\n]+/)
       .pop();
+    this.lastWordBeforeCursor = lastWord ? lastWord : '';
 
-    if (lastWord?.startsWith('@')) {
-      if (!this.updateFilteredUsers(lastWord)) {
+    if (this.lastWordBeforeCursor?.startsWith('@')) {
+      if (!this.updateFilteredUsers(this.lastWordBeforeCursor)) {
         return;
       }
       this.updateMentionListPosition(lineBeforeCursor, inputElement);
@@ -225,10 +221,14 @@ export class CommentComponent {
   // Method to select a user from the mention list
   selectUser(userName: string): void {
     // Replace partially finished '@' string with full username
-    this.newCommentText = this.newCommentText.replace(
-      /@(?!\w)/,
-      `@${userName}`,
-    );
+    if (this.cursorPosition !== null) {
+      const startPos = this.cursorPosition - this.lastWordBeforeCursor.length;
+      this.newCommentText = [
+        this.newCommentText.slice(0, startPos),
+        `@${userName}`,
+        this.newCommentText.slice(this.cursorPosition)
+      ].join('');
+    }
     this.showMentionList = false;
     this.selectedUserIndex = 0;
   }
@@ -254,14 +254,10 @@ export class CommentComponent {
         timestamp: new Date().toString(),
       });
 
+      // Alert each mentioned user
       if (mentions.length > 0) {
         alert(`Mentioned: ${mentions.join(', ')}`)
       }
-
-      /*// Alert each mentioned user
-      mentions.forEach((userName) => {
-        alert(`Mentioned: ${userName}`); // Or send email/push notification
-      });*/
 
       this.newCommentText = '';
       this.showMentionList = false;
@@ -277,6 +273,8 @@ export class CommentComponent {
     const mentions = potentialMentions.filter((name) =>
       this.users.some((user) => user.name.toLowerCase() === name.toLowerCase()),
     );
-    return mentions;
+
+    // Flatten array
+    return [...new Set(mentions)];
   }
 }
